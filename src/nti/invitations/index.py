@@ -8,6 +8,8 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import absolute_import
 
+import BTrees
+
 from zope import component
 
 from zope.catalog.interfaces import ICatalog
@@ -15,8 +17,6 @@ from zope.catalog.interfaces import ICatalog
 from zope.intid.interfaces import IIntIds
 
 from zope.location import locate
-
-import BTrees
 
 from nti.invitations.interfaces import IInvitation
 from nti.invitations.interfaces import IActionableInvitation

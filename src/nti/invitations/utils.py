@@ -13,13 +13,13 @@ import time
 import uuid
 from datetime import datetime
 
+from BTrees.LFBTree import LFSet
+
 from zope import component
 
 from zope.event import notify
 
 from zope.intid.interfaces import IIntIds
-
-from BTrees.LFBTree import LFSet
 
 from nti.base._compat import text_
 

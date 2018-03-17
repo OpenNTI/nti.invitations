@@ -161,6 +161,8 @@ class IInvitationsContainer(IContained,
         such invitation.
         """
     getInvitationByCode = get_invitation_by_code
+
+
 IInvitations = IInvitationsContainer  # BWC
 
 
