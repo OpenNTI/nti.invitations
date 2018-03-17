@@ -25,11 +25,11 @@ from zope.intid.interfaces import IIntIds
 
 from zope.mimetype.interfaces import IContentTypeAware
 
+from zope.security.management import system_user
+
 from z3c.schema.email.field import isValidMailAddress
 
 from nti.containers.containers import CaseInsensitiveLastModifiedBTreeContainer
-
-from nti.coremetadata.interfaces import SYSTEM_USER_NAME
 
 from nti.dublincore.datastructures import PersistentCreatedModDateTrackingObject
 
@@ -48,6 +48,8 @@ from nti.schema.eqhash import EqHash
 from nti.schema.schema import SchemaConfigured
 
 from nti.schema.fieldproperty import createDirectFieldProperties
+
+SYSTEM_USER_NAME = getattr(system_user, 'title').lower()
 
 logger = __import__('logging').getLogger(__name__)
 
