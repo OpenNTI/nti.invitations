@@ -218,7 +218,7 @@ def accept_invitation(user, invitation):
     result = False
     if actor.accept(user, invitation):
         invitation.accepted = True
-        invitation.receiver = user.username  # update
+        invitation.receiver = getattr(user, 'username', user)  # update
         notify(InvitationAcceptedEvent(invitation, user))
         result = True
     return result
