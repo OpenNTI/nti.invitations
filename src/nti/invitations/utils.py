@@ -43,8 +43,8 @@ logger = __import__('logging').getLogger(__name__)
 
 
 def get_random_invitation_code():
-    s = str(uuid.uuid4()).split('-')[-1][:10].upper()
-    result = s[0:3] + '-' + s[3:6] + '-' + s[6:]
+    s = str(uuid.uuid4()).split('-')[-1].upper()
+    result = s[0:4] + '-' + s[4:8] + '-' + s[8:]
     return text_(result)
 
 
