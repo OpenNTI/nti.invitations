@@ -131,14 +131,15 @@ class InvitationsContainer(CaseInsensitiveLastModifiedBTreeContainer,
     registerInvitation = append = add
 
     def remove(self, invitation, event=True):
+        result = False
         code = getattr(invitation, 'code', invitation)
         if code in self:
             if event:
                 del self[code]
             else:
                 self._delitemf(code, False)
-            return True
-        return False
+            result = True
+        return result
     removeInvitation = remove
 
     def get_invitation_by_code(self, code):
