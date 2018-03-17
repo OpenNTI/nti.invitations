@@ -16,19 +16,32 @@ import time
 
 import BTrees
 
+import fudge
+
 from zope import component
 
 from zope.intid.interfaces import IIntIds
 
 from nti.invitations.index import create_invitations_catalog
 
+from nti.invitations.interfaces import InvitationActorError
+from nti.invitations.interfaces import IInvitationsContainer
+from nti.invitations.interfaces import InvitationExpiredError
+
 from nti.invitations.model import Invitation
 from nti.invitations.model import UserInvitation
+from nti.invitations.model import install_invitations_container
 
 from nti.invitations.utils import is_actionable
 from nti.invitations.utils import get_invitations
+from nti.invitations.utils import accept_invitation
 from nti.invitations.utils import get_invitations_ids
 from nti.invitations.utils import get_invitation_actor
+from nti.invitations.utils import get_sent_invitations
+from nti.invitations.utils import get_pending_invitations
+from nti.invitations.utils import get_expired_invitations
+from nti.invitations.utils import has_pending_invitations
+from nti.invitations.utils import delete_expired_invitations
 from nti.invitations.utils import get_expired_invitation_ids
 from nti.invitations.utils import get_pending_invitation_ids
 from nti.invitations.utils import get_random_invitation_code
@@ -63,10 +76,10 @@ class TestUtils(InvitationLayerTest):
                         site=u"dataserver2",
                         expiryTime=time.time() + 1000)
         catalog.index_doc(3, i3)
-        return catalog
+        return catalog, (i1, i2, i3)
 
     def test_get_invitations_ids(self):
-        catalog = self.create_invitations()
+        catalog, _ = self.create_invitations()
         invitations = get_invitations_ids(catalog=catalog)
         assert_that(invitations, has_length(3))
 
@@ -92,7 +105,7 @@ class TestUtils(InvitationLayerTest):
         assert_that(invitations, has_length(3))
 
     def test_get_pending_invitations(self):
-        catalog = self.create_invitations()
+        catalog, _ = self.create_invitations()
 
         result = get_pending_invitation_ids("ichigo", catalog=catalog)
         assert_that(result, has_length(2))
@@ -130,14 +143,12 @@ class TestUtils(InvitationLayerTest):
                                     accepted=True)
         assert_that(is_actionable(invitation), is_(True))
 
-    def test_get_invitations(self):
+    def test_invitations(self):
         i4 = UserInvitation(code='i4',
                             receiver='toshiro',
                             sender='aizen',
                             site="dataserver2",
                             accepted=False)
-        catalog = self.create_invitations()
-        catalog.index_doc(4, i4)
 
         class MockInt(object):
             def queryObject(self, uid):
@@ -147,7 +158,83 @@ class TestUtils(InvitationLayerTest):
         gsm = component.getGlobalSiteManager()
         gsm.registerUtility(intids, IIntIds)
 
+        catalog = create_invitations_catalog(family=BTrees.family64)
+        assert_that(has_pending_invitations(catalog=catalog),
+                    is_(False))
+
+        catalog, _ = self.create_invitations()
+        catalog.index_doc(4, i4)
+
         assert_that(get_invitations("dataserver2", "toshiro", catalog=catalog),
                     has_length(1))
 
+        assert_that(get_pending_invitations(("toshiro",), catalog=catalog),
+                    has_length(1))
+
+        assert_that(has_pending_invitations(catalog=catalog),
+                    is_(True))
+
         gsm.unregisterUtility(intids, IIntIds)
+
+    def test_expired_invitations(self):
+        catalog, invs = self.create_invitations()
+
+        class MockInt(object):
+            def queryObject(self, uid):
+                return invs[uid - 1]
+
+            def register(self, obj):
+                pass
+
+        intids = MockInt()
+        gsm = component.getGlobalSiteManager()
+        gsm.registerUtility(intids, IIntIds)
+
+        assert_that(get_expired_invitations(('ichigo',), catalog=catalog),
+                    has_length(1))
+
+        container = install_invitations_container(component, intids)
+        for invitation in invs:
+            container.add(invitation)
+
+        assert_that(delete_expired_invitations(catalog=catalog),
+                    has_length(1))
+
+        gsm.unregisterUtility(intids, IIntIds)
+        gsm.unregisterUtility(container, IInvitationsContainer)
+
+    def test_get_sent_invitations(self):
+        catalog, invs = self.create_invitations()
+
+        class MockInt(object):
+            def queryObject(self, uid):
+                return invs[uid - 1]
+
+        intids = MockInt()
+        gsm = component.getGlobalSiteManager()
+        gsm.registerUtility(intids, IIntIds)
+
+        assert_that(get_sent_invitations(('aizen',), catalog=catalog),
+                    has_length(3))
+
+        assert_that(get_sent_invitations('ichigo', catalog=catalog),
+                    has_length(0))
+
+        gsm.unregisterUtility(intids, IIntIds)
+
+    @fudge.patch("nti.invitations.utils.get_invitation_actor")
+    def test_accept_invitation(self, mock_ga):
+        _, invs = self.create_invitations()
+        valid, expired = invs[:2]  # expired
+        with self.assertRaises(InvitationExpiredError):
+            accept_invitation('ichigo', expired)
+
+        mock_ga.is_callable().returns(None)
+        with self.assertRaises(InvitationActorError):
+            accept_invitation('ichigo', valid)
+
+        fake_actor = fudge.Fake()
+        fake_actor.provides("accept").returns(True)
+        mock_ga.is_callable().returns(fake_actor)
+        assert_that(accept_invitation('ichigo', valid),
+                    is_(True))
