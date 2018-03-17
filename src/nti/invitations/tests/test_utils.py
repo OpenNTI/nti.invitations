@@ -18,23 +18,22 @@ import BTrees
 
 from zope import component
 
+from zope.intid.interfaces import IIntIds
+
 from nti.invitations.index import create_invitations_catalog
 
-from nti.invitations.interfaces import IInvitationsContainer
-
 from nti.invitations.model import Invitation
-from nti.invitations.model import InvitationsContainer
+from nti.invitations.model import UserInvitation
 
+from nti.invitations.utils import is_actionable
+from nti.invitations.utils import get_invitations
 from nti.invitations.utils import get_invitations_ids
+from nti.invitations.utils import get_invitation_actor
 from nti.invitations.utils import get_expired_invitation_ids
 from nti.invitations.utils import get_pending_invitation_ids
 from nti.invitations.utils import get_random_invitation_code
 
 from nti.invitations.tests import InvitationLayerTest
-
-from nti.invitations.wref import InvitationWeakRef
-
-from nti.wref.interfaces import IWeakRef
 
 
 class TestUtils(InvitationLayerTest):
@@ -66,7 +65,7 @@ class TestUtils(InvitationLayerTest):
         catalog.index_doc(3, i3)
         return catalog
 
-    def test_get_invitations(self):
+    def test_get_invitations_ids(self):
         catalog = self.create_invitations()
         invitations = get_invitations_ids(catalog=catalog)
         assert_that(invitations, has_length(3))
@@ -117,26 +116,38 @@ class TestUtils(InvitationLayerTest):
         code = get_random_invitation_code()
         assert_that(code, has_length(12))
 
-    def test_wref(self):
-        container = InvitationsContainer()
-        component.getGlobalSiteManager().registerUtility(container, IInvitationsContainer)
-        invitation = Invitation(code=u'test_invitation',
-                                receiver=u'ichigo',
-                                sender=u'aizen',
-                                accepted=True)
-        container = component.getUtility(IInvitationsContainer)
-        container.add(invitation)
-
-        wref = InvitationWeakRef(invitation)
-        assert_that(wref(), is_(invitation))
-        dne_invitation = Invitation(code=u'dne',
-                                    receiver=u'ichigo',
-                                    sender=u'aizen',
+    def test_get_invitation_actor(self):
+        invitation = UserInvitation(code='bleach',
+                                    receiver='ichigo',
+                                    sender='aizen',
                                     accepted=True)
-        wref = InvitationWeakRef(dne_invitation)
-        assert_that(wref(), none())
-        wref2 = IWeakRef(dne_invitation)
-        assert_that(wref2, is_(wref))
+        assert_that(get_invitation_actor(invitation), is_(none()))
 
-        component.getGlobalSiteManager().unregisterUtility(container,
-                                                           IInvitationsContainer)
+    def test_is_actionable(self):
+        invitation = UserInvitation(code='bleach',
+                                    receiver='ichigo',
+                                    sender='aizen',
+                                    accepted=True)
+        assert_that(is_actionable(invitation), is_(True))
+
+    def test_get_invitations(self):
+        i4 = UserInvitation(code='i4',
+                            receiver='toshiro',
+                            sender='aizen',
+                            site="dataserver2",
+                            accepted=False)
+        catalog = self.create_invitations()
+        catalog.index_doc(4, i4)
+
+        class MockInt(object):
+            def queryObject(self, uid):
+                return i4 if uid == 4 else None
+
+        intids = MockInt()
+        gsm = component.getGlobalSiteManager()
+        gsm.registerUtility(intids, IIntIds)
+
+        assert_that(get_invitations("dataserver2", "toshiro", catalog=catalog),
+                    has_length(1))
+
+        gsm.unregisterUtility(intids, IIntIds)
