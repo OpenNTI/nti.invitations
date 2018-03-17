@@ -127,7 +127,7 @@ class TestUtils(InvitationLayerTest):
 
     def test_get_random_invitation_code(self):
         code = get_random_invitation_code()
-        assert_that(code, has_length(12))
+        assert_that(code, has_length(14))
 
     def test_get_invitation_actor(self):
         invitation = UserInvitation(code='bleach',
