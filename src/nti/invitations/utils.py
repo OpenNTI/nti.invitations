@@ -13,13 +13,13 @@ import time
 import uuid
 from datetime import datetime
 
+from BTrees.LFBTree import LFSet
+
 from zope import component
 
 from zope.event import notify
 
 from zope.intid.interfaces import IIntIds
-
-from BTrees.LFBTree import LFSet
 
 from nti.base._compat import text_
 
@@ -215,9 +215,10 @@ def accept_invitation(user, invitation):
     actor = get_invitation_actor(invitation, user)
     if actor is None:
         raise InvitationActorError(invitation)
+    result = False
     if actor.accept(user, invitation):
         invitation.accepted = True
-        invitation.receiver = user.username  # update
+        invitation.receiver = getattr(user, 'username', user)  # update
         notify(InvitationAcceptedEvent(invitation, user))
-        return True
-    return False
+        result = True
+    return result

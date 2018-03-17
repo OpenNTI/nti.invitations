@@ -11,6 +11,8 @@ from __future__ import absolute_import
 import time
 from functools import total_ordering
 
+from z3c.schema.email.field import isValidMailAddress
+
 from zope import interface
 
 from zope.annotation.interfaces import IAttributeAnnotatable
@@ -26,8 +28,6 @@ from zope.intid.interfaces import IIntIds
 from zope.mimetype.interfaces import IContentTypeAware
 
 from zope.security.management import system_user
-
-from z3c.schema.email.field import isValidMailAddress
 
 from nti.containers.containers import CaseInsensitiveLastModifiedBTreeContainer
 
@@ -109,6 +109,7 @@ class UserInvitation(PersistentCreatedModDateTrackingObject,
         except AttributeError:  # pragma: no cover
             return NotImplemented
 
+
 # BWC
 Invitation = UserInvitation
 
@@ -130,14 +131,15 @@ class InvitationsContainer(CaseInsensitiveLastModifiedBTreeContainer,
     registerInvitation = append = add
 
     def remove(self, invitation, event=True):
+        result = False
         code = getattr(invitation, 'code', invitation)
         if code in self:
             if event:
                 del self[code]
             else:
                 self._delitemf(code, False)
-            return True
-        return False
+            result = True
+        return result
     removeInvitation = remove
 
     def get_invitation_by_code(self, code):
