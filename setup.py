@@ -1,5 +1,6 @@
 import codecs
-from setuptools import setup, find_packages
+from setuptools import setup
+from setuptools import find_packages
 
 entry_points = {
     'console_scripts': [
@@ -7,6 +8,7 @@ entry_points = {
 }
 
 TESTS_REQUIRE = [
+    'fudge',
     'nti.testing',
     'zope.testrunner',
 ]
@@ -51,12 +53,31 @@ setup(
     tests_require=TESTS_REQUIRE,
     install_requires=[
         'setuptools',
+        'BTrees',
+        'nti.base',
+        'nti.containers',
+        'nti.dublincore',
+        'nti.externalization',
+        'nti.property',
+        'nti.schema',
+        'nti.wref',
+        'nti.zope_catalog',
         'six',
+        'z3c.schema',
+        'zope.annotation',
+        'zope.cachedescriptors',
+        'zope.catalog',
         'zope.component',
-        'zope.deferredimport',
-        'zope.deprecation',
+        'zope.container',
+        'zope.event',
+        'zope.i18nmessageid',
+        'zope.intid',
         'zope.interface',
-        'zope.schema'
+        'zope.lifecycleevent',
+        'zope.location',
+        'zope.mimetype',
+        'zope.schema',
+        'zope.security',
     ],
     extras_require={
         'test': TESTS_REQUIRE,
