@@ -12,8 +12,8 @@ import time
 
 from zope import component
 
-from nti.invitations.interfaces import IActionableInvitation
 from nti.invitations.interfaces import IInvitationSentEvent
+from nti.invitations.interfaces import IActionableInvitation
 
 
 @component.adapter(IActionableInvitation, IInvitationSentEvent)
