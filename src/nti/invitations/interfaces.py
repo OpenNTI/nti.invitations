@@ -73,6 +73,15 @@ class IInvitation(IContained,
     Code = code
 
 
+
+class IDisabledInvitation(interface.Interface):
+    """
+    An marker interface for :class:`IInvitation` objects that have been disabled.
+    """
+
+IDisabledInvitation.setTaggedValue('_ext_is_marker_interface', True)
+
+
 class IActionableInvitation(IInvitation):
     """
     An :class:`IInvitation` targeting a specific user. At some time in the
