@@ -24,7 +24,8 @@ from zope.intid.interfaces import IIntIds
 
 from nti.base._compat import text_
 
-from nti.invitations.index import IX_SITE, IX_MIMETYPE
+from nti.invitations.index import IX_SITE
+from nti.invitations.index import IX_MIMETYPE
 from nti.invitations.index import IX_SENDER
 from nti.invitations.index import IX_ACCEPTED
 from nti.invitations.index import IX_RECEIVER
