@@ -101,6 +101,9 @@ class TestUtils(InvitationLayerTest):
         invitations = get_invitations_ids(sites="xzy", catalog=catalog)
         assert_that(invitations, has_length(0))
 
+        invitations = get_invitations_ids(mimeTypes="xyz", catalog=catalog)
+        assert_that(invitations, has_length(0))
+
         invitations = get_invitations_ids(sites="dataserver2", catalog=catalog)
         assert_that(invitations, has_length(3))
 
@@ -123,6 +126,9 @@ class TestUtils(InvitationLayerTest):
         assert_that(sorted(result), is_([2]))
 
         result = get_expired_invitation_ids("aizen", catalog=catalog)
+        assert_that(result, has_length(0))
+
+        result = get_expired_invitation_ids("aizen", catalog=catalog, mimeTypes="xyz")
         assert_that(result, has_length(0))
 
     def test_get_random_invitation_code(self):
