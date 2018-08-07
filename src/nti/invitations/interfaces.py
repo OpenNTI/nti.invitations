@@ -214,22 +214,6 @@ class InvitationAcceptedEvent(ObjectModifiedEvent):
         self.user = user
 
 
-class IMarkAsAcceptedInvitationEvent(IObjectEvent):
-    """
-    Indicates that an invitation should be marked as accepted
-    This event should be used when an event should not be marked
-    as accepted until some future event it triggered occurs (account creation, etc)
-    """
-
-
-@interface.implementer(IMarkAsAcceptedInvitationEvent)
-class MarkAsAcceptedInvitationEvent(ObjectEvent):
-
-    def __init__(self, user, obj=None):
-        super(MarkAsAcceptedInvitationEvent, self).__init__(obj)
-        self.user = user
-
-
 class DuplicateInvitationCodeError(ValidationError):
     """
     Indicates a :class:`IInvitation` has a duplicate invitation code.
