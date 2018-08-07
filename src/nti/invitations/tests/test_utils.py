@@ -86,10 +86,10 @@ class TestUtils(InvitationLayerTest):
         invitations = get_invitations_ids(catalog=catalog)
         assert_that(invitations, has_length(3))
 
-        invitations = get_invitations_ids(receivers="aizen", catalog=catalog)
+        invitations = get_invitations_ids("dataserver2", receivers="aizen", catalog=catalog)
         assert_that(invitations, has_length(0))
 
-        invitations = get_invitations_ids(receivers="ichigo", catalog=catalog)
+        invitations = get_invitations_ids("dataserver2", receivers="ichigo", catalog=catalog)
         assert_that(invitations, has_length(3))
 
         invitations = get_invitations_ids(senders="ichigo", catalog=catalog)
@@ -107,7 +107,7 @@ class TestUtils(InvitationLayerTest):
     def test_get_pending_invitations(self):
         catalog, _ = self.create_invitations()
 
-        result = get_pending_invitation_ids("ichigo", catalog=catalog)
+        result = get_pending_invitation_ids("ichigo", "dataserver2",  catalog=catalog)
         assert_that(result, has_length(2))
         assert_that(sorted(result), is_([1, 3]))
 
@@ -190,7 +190,7 @@ class TestUtils(InvitationLayerTest):
         gsm = component.getGlobalSiteManager()
         gsm.registerUtility(intids, IIntIds)
 
-        assert_that(get_expired_invitations(('ichigo',), catalog=catalog),
+        assert_that(get_expired_invitations(('ichigo',), "dataserver2", catalog=catalog),
                     has_length(1))
 
         container = install_invitations_container(component, intids)
@@ -214,7 +214,7 @@ class TestUtils(InvitationLayerTest):
         gsm = component.getGlobalSiteManager()
         gsm.registerUtility(intids, IIntIds)
 
-        assert_that(get_sent_invitations(('aizen',), catalog=catalog),
+        assert_that(get_sent_invitations(('aizen',), "dataserver2", catalog=catalog),
                     has_length(3))
 
         assert_that(get_sent_invitations('ichigo', catalog=catalog),
