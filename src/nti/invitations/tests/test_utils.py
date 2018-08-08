@@ -101,13 +101,16 @@ class TestUtils(InvitationLayerTest):
         invitations = get_invitations_ids(sites="xzy", catalog=catalog)
         assert_that(invitations, has_length(0))
 
+        invitations = get_invitations_ids(mimeTypes="xyz", catalog=catalog)
+        assert_that(invitations, has_length(0))
+
         invitations = get_invitations_ids(sites="dataserver2", catalog=catalog)
         assert_that(invitations, has_length(3))
 
     def test_get_pending_invitations(self):
         catalog, _ = self.create_invitations()
 
-        result = get_pending_invitation_ids("ichigo", "dataserver2",  catalog=catalog)
+        result = get_pending_invitation_ids("ichigo", sites="dataserver2",  catalog=catalog)
         assert_that(result, has_length(2))
         assert_that(sorted(result), is_([1, 3]))
 
@@ -123,6 +126,9 @@ class TestUtils(InvitationLayerTest):
         assert_that(sorted(result), is_([2]))
 
         result = get_expired_invitation_ids("aizen", catalog=catalog)
+        assert_that(result, has_length(0))
+
+        result = get_expired_invitation_ids("aizen", catalog=catalog, mimeTypes="xyz")
         assert_that(result, has_length(0))
 
     def test_get_random_invitation_code(self):
@@ -165,7 +171,7 @@ class TestUtils(InvitationLayerTest):
         catalog, _ = self.create_invitations()
         catalog.index_doc(4, i4)
 
-        assert_that(get_invitations("dataserver2", "toshiro", catalog=catalog),
+        assert_that(get_invitations(sites="dataserver2", receivers="toshiro", catalog=catalog),
                     has_length(1))
 
         assert_that(get_pending_invitations(("toshiro",), catalog=catalog),
@@ -190,7 +196,7 @@ class TestUtils(InvitationLayerTest):
         gsm = component.getGlobalSiteManager()
         gsm.registerUtility(intids, IIntIds)
 
-        assert_that(get_expired_invitations(('ichigo',), "dataserver2", catalog=catalog),
+        assert_that(get_expired_invitations(('ichigo',), sites="dataserver2", catalog=catalog),
                     has_length(1))
 
         container = install_invitations_container(component, intids)
@@ -214,7 +220,7 @@ class TestUtils(InvitationLayerTest):
         gsm = component.getGlobalSiteManager()
         gsm.registerUtility(intids, IIntIds)
 
-        assert_that(get_sent_invitations(('aizen',), "dataserver2", catalog=catalog),
+        assert_that(get_sent_invitations(('aizen',), sites="dataserver2", catalog=catalog),
                     has_length(3))
 
         assert_that(get_sent_invitations('ichigo', catalog=catalog),
