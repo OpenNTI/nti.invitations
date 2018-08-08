@@ -78,7 +78,7 @@ class IDisabledInvitation(interface.Interface):
     """
     An marker interface for :class:`IInvitation` objects that have been disabled.
     """
-
+# pylint: disable=no-value-for-parameter
 IDisabledInvitation.setTaggedValue('_ext_is_marker_interface', True)
 
 
