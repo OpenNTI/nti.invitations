@@ -45,11 +45,13 @@ logger = __import__('logging').getLogger(__name__)
 
 
 def safe_iterable(value, sep=','):
+    if value is None:
+        return None
     if isinstance(value, six.string_types):
         value = value.split(sep)
-    value = set(value or ())
+    value = set(value)
     value.discard(None)
-    return value or ()
+    return value
 
 
 def get_random_invitation_code():
