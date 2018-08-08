@@ -255,6 +255,11 @@ class InvitationActorError(InvitationValidationError):
     i18n_message = __doc__
 
 
+class InvitationDisabledError(InvitationValidationError):
+    __doc__ = _(u'The invitation is disabled.')
+    i18n_message = __doc__
+
+
 class IInvitationActor(interface.Interface):
     """
     An interface for a utility to act on an invitation
