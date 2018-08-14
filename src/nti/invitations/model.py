@@ -69,7 +69,7 @@ class UserInvitation(PersistentCreatedModDateTrackingObject,
     username = alias('receiver')
     inviter = creator = alias('sender')
     expirationTime = alias('expiryTime')
-    sender = None
+    _sender = None
 
     parameters = {}  # IContentTypeAware
 
