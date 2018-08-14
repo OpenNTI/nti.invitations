@@ -69,13 +69,13 @@ class UserInvitation(PersistentCreatedModDateTrackingObject,
     username = alias('receiver')
     inviter = creator = alias('sender')
     expirationTime = alias('expiryTime')
+    sender = None
 
     parameters = {}  # IContentTypeAware
 
     mimeType = mime_type = "application/vnd.nextthought.invitation"
 
     def __init__(self, **kwargs):
-        self._sender = None
         SchemaConfigured.__init__(self, **kwargs)
         PersistentCreatedModDateTrackingObject.__init__(self)
 
