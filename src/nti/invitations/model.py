@@ -75,6 +75,7 @@ class UserInvitation(PersistentCreatedModDateTrackingObject,
     mimeType = mime_type = "application/vnd.nextthought.invitation"
 
     def __init__(self, **kwargs):
+        self._sender = None
         SchemaConfigured.__init__(self, **kwargs)
         PersistentCreatedModDateTrackingObject.__init__(self)
 
@@ -86,9 +87,15 @@ class UserInvitation(PersistentCreatedModDateTrackingObject,
             self.site = result
         return result
 
-    @readproperty
+    @property
     def sender(self):
-        return SYSTEM_USER_NAME
+        if self._sender is None:
+            return SYSTEM_USER_NAME
+        return getattr(self._sender, 'username', self._sender)
+
+    @sender.setter
+    def sender(self, sender):
+        self._sender = sender
 
     def is_email(self):
         return bool(self.receiver and isValidMailAddress(self.receiver))
