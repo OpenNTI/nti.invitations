@@ -15,6 +15,8 @@ from zope import component
 from nti.invitations.interfaces import IInvitationSentEvent
 from nti.invitations.interfaces import IActionableInvitation
 
+logger = __import__('logging').getLogger(__name__)
+
 
 @component.adapter(IActionableInvitation, IInvitationSentEvent)
 def _on_invitation_sent(invitation, unused_event):
