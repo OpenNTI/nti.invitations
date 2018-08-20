@@ -67,7 +67,7 @@ class UserInvitation(PersistentCreatedModDateTrackingObject,
     __name__ = alias('code')
 
     username = alias('receiver')
-    inviter = creator = alias('sender')
+    inviter = creator = alias('_sender')
     expirationTime = alias('expiryTime')
     _sender = None
 
