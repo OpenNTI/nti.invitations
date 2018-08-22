@@ -225,10 +225,8 @@ class DuplicateInvitationCodeError(ValidationError):
 
 
 class InvitationValidationError(ValidationError):
-    """
-    A problem relating to the validity of an attempted action on
-    an invitation.
-    """
+    __doc__ = _(u'A problem relating to the validity of an attempted action on an invitation.')
+    i18n_message = __doc__
 
     def __init__(self, invitation=None):
         super(InvitationValidationError, self).__init__()
