@@ -198,6 +198,9 @@ class InvitationSentEvent(ObjectEvent):
         super(InvitationSentEvent, self).__init__(obj)
         self.user = user
 
+    def __str__(self):
+        return self.doc()
+
 
 class IInvitationAcceptedEvent(IObjectModifiedEvent, IInvitationEvent):
     """
@@ -231,6 +234,16 @@ class InvitationValidationError(ValidationError):
     def __init__(self, invitation=None):
         super(InvitationValidationError, self).__init__()
         self.invitation = invitation
+
+
+class InvitationEmailNotMatchingError(InvitationValidationError):
+    __doc__ = _(u'The email associated with this invitation does not match the account.')
+    i18n_message = __doc__
+
+
+class InvitationSiteNotMatchingError(InvitationValidationError):
+    __doc__ = _(u'The invitation is not valid for this site.')
+    i18n_message = __doc__
 
 
 class InvitationCodeError(InvitationValidationError):
