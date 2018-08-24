@@ -33,3 +33,5 @@ class TestInterfaces(unittest.TestCase):
         from nti.invitations.interfaces import InvitationValidationError
         error = InvitationValidationError("myInvitation")
         assert_that(error, has_property('invitation', is_('myInvitation')))
+        assert_that(str(error), is_(InvitationValidationError.__doc__))
+        assert_that(error.doc(), is_(InvitationValidationError.__doc__))
