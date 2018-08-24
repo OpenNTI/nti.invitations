@@ -235,6 +235,9 @@ class InvitationValidationError(ValidationError):
         super(InvitationValidationError, self).__init__()
         self.invitation = invitation
 
+    def __str__(self):
+        return self.doc()
+
 
 class InvitationEmailNotMatchingError(InvitationValidationError):
     __doc__ = _(u'The email associated with this invitation does not match the account.')
