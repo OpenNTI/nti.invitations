@@ -111,6 +111,9 @@ class IActionableInvitation(IInvitation):
 
     accepted = Bool(title=u"Accepted flag.", default=False, required=True)
 
+    acceptedTime = Number(title=u"The accepted timestamp.",
+                          required=False)
+
     expiryTime = Number(title=u"The expiry timestamp.",
                         required=True,
                         default=0)

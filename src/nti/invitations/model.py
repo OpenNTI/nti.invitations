@@ -111,6 +111,10 @@ class UserInvitation(PersistentCreatedModDateTrackingObject,
         return self.accepted
     isAccepted = is_accepted
 
+    @readproperty
+    def accepted(self):
+        return self.acceptedTime is not None
+
     def __lt__(self, other):
         try:
             return (self.code, self.createdTime) < (other.code, other.createdTime)

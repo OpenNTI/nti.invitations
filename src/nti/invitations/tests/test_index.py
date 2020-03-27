@@ -48,7 +48,7 @@ class TestIndex(unittest.TestCase):
         invitation = Invitation(code=u'bleach',
                                 receiver=u'ichigo',
                                 sender=u'aizen',
-                                accepted=True)
+                                acceptedTime=90)
         invitation.createdTime = invitation.lastModified = 100
         catalog = create_invitations_catalog(family=BTrees.family64)
         catalog.index_doc(1, invitation)

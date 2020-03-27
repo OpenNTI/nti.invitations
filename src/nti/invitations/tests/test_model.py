@@ -49,14 +49,22 @@ class TestModel(InvitationLayerTest):
         invitation = UserInvitation(code=u'bleach',
                                     receiver=u'ichigo',
                                     sender=u'aizen',
-                                    accepted=True)
+                                    acceptedTime=90)
         assert_that(invitation,
                     externalizes(all_of(has_entry('code', 'bleach'),
                                         has_entry('receiver', 'ichigo'),
                                         has_entry('sender', 'aizen'),
                                         has_entry('site', 'anime'),
                                         has_entry('accepted', is_(True)),
+                                        has_entry('acceptedTime', is_(90)),
                                         has_entry('expiryTime', is_(0)))))
+
+        invitation.acceptedTime = None
+        assert_that(invitation.accepted, is_(False))
+
+        invitation.accepted = True
+        assert_that(invitation.accepted, is_(True))
+        assert_that(invitation.acceptedTime, is_(None))
 
         assert_that(invitation, validly_provides(IUserInvitation))
 
