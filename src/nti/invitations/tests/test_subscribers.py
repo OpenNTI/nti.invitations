@@ -28,7 +28,7 @@ class TestSubscribers(InvitationLayerTest):
         shikai = UserInvitation(code='shikai',
                                 receiver='zangetzu',
                                 sender='ichigo',
-                                accepted=True)
+                                acceptedTime=90)
         assert_that(shikai, has_property('sent', is_(none())))
         notify(InvitationSentEvent(shikai, 'zangetzu'))
         assert_that(shikai, has_property('sent', is_not(none())))

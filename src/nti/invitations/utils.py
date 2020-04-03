@@ -298,7 +298,7 @@ def accept_invitation(user, invitation):
         raise InvitationActorError(invitation)
     result = False
     if actor.accept(user, invitation):
-        invitation.accepted = True
+        invitation.acceptedTime = time.time()
         invitation.receiver = getattr(user, 'username', user)  # update
         notify(InvitationAcceptedEvent(invitation, user))
         result = True
