@@ -67,35 +67,6 @@ def get_invitation_actor(invitation, user=None):
     return actor
 
 
-def get_invitations_ids(sites=None,
-                        receivers=None,
-                        senders=None,
-                        catalog=None,
-                        mimeTypes=None):
-    query = {}
-    catalog = get_invitations_catalog() if catalog is None else catalog
-
-    # Without creating an object to wrap these in, we are stuck passing them individually
-    sites = safe_iterable(sites)
-    receivers = safe_iterable(receivers)
-    senders = safe_iterable(senders)
-    mimeTypes = safe_iterable(mimeTypes)
-
-    # add query params
-    for name, values in ((IX_RECEIVER, receivers),
-                         (IX_SENDER, senders),
-                         (IX_MIMETYPE, mimeTypes),
-                         (IX_SITE, sites)):
-        if values is not None:
-            query[name] = {'any_of': values}
-    # run query if available
-    if query:
-        doc_ids = catalog.apply(query) or ()
-    else:
-        doc_ids = tuple(catalog[IX_SITE].documents_to_values.keys())
-    return doc_ids
-
-
 def is_actionable(obj):
     return IActionableInvitation.providedBy(obj)
 
@@ -107,11 +78,11 @@ def get_invitations(sites=None,
                     mimeTypes=None):
     result = []
     intids = component.getUtility(IIntIds)
-    doc_ids = get_invitations_ids(sites,
-                                  receivers,
-                                  senders,
-                                  catalog,
-                                  mimeTypes)
+    doc_ids = get_invitation_intids(sites=sites,
+                                    receivers=receivers,
+                                    senders=senders,
+                                    catalog=catalog,
+                                    mimeTypes=mimeTypes)
     for uid in doc_ids or ():
         obj = intids.queryObject(uid)
         if is_actionable(obj):
@@ -119,36 +90,51 @@ def get_invitations(sites=None,
     return result
 
 
-def get_pending_invitation_ids(receivers=None,
-                               sites=None,
-                               now=None,
-                               catalog=None,
-                               mimeTypes=None):
-
+def get_invitation_intids(receivers=None,
+                          senders=None,
+                          sites=None,
+                          now=None,
+                          catalog=None,
+                          mimeTypes=None,
+                          accepted=False,
+                          expired=False):
+    """
+    Get invitation intids by site and mimetype. By default, 
+    pending invitations (not accepted and not expired) are returned.
+    """
     receivers = safe_iterable(receivers)
+    senders = safe_iterable(senders)
     mimeTypes = safe_iterable(mimeTypes)
     sites = safe_iterable(sites)
-
     catalog = get_invitations_catalog() if catalog is None else catalog
-    query = {
-        IX_ACCEPTED: {'any_of': (False,)},
-        IX_EXPIRYTIME: {'any_of': (0,)},
-    }
-
+    now = time.time() if not now else now
+    
+    query = {IX_ACCEPTED: {'any_of': (accepted,)}}
     for name, values in ((IX_RECEIVER, receivers),
+                         (IX_SENDER, senders),
                          (IX_MIMETYPE, mimeTypes),
                          (IX_SITE, sites)):
         if values is not None:
             query[name] = {'any_of': values}
-
-    # pending no expiry
-    no_expire_ids = catalog.apply(query) or LFSet()
-    # pending with expiration
-    now = time.time() if not now else now
-    query[IX_EXPIRYTIME] = {'between': (now, MAX_TS)}
-    in_between_ids = catalog.apply(query) or LFSet()
-    # return union
-    return catalog.family.IF.multiunion([no_expire_ids, in_between_ids])
+    
+    if accepted:
+        # Accepted
+        result = catalog.apply(query)
+    elif expired:
+        query[IX_EXPIRYTIME] = {'between': (60, now)}
+        result = catalog.apply(query)
+    else:
+        # Pending
+        query[IX_EXPIRYTIME] = {'any_of': (0,)}
+        # pending no expiry
+        no_expire_ids = catalog.apply(query) or LFSet()
+        # pending with expiration
+        query[IX_EXPIRYTIME] = {'between': (now, MAX_TS)}
+        in_between_ids = catalog.apply(query) or LFSet()
+        # return union
+        result = catalog.family.IF.multiunion([no_expire_ids, in_between_ids])
+    return result
+get_pending_invitation_ids = get_invitation_intids
 
 
 def get_pending_invitations(receivers=None,
@@ -158,11 +144,31 @@ def get_pending_invitations(receivers=None,
                             mimeTypes=None):
     result = []
     intids = component.getUtility(IIntIds)
-    doc_ids = get_pending_invitation_ids(receivers,
-                                         sites,
-                                         now,
-                                         catalog,
-                                         mimeTypes)
+    doc_ids = get_pending_invitation_ids(receivers=receivers,
+                                         sites=sites,
+                                         now=now,
+                                         catalog=catalog,
+                                         mimeTypes=mimeTypes)
+    for uid in doc_ids or ():
+        obj = intids.queryObject(uid)
+        if is_actionable(obj):
+            result.append(obj)
+    return result
+
+
+def get_accepted_invitations(receivers=None,
+                             sites=None,
+                             now=None,
+                             catalog=None,
+                             mimeTypes=None):
+    result = []
+    intids = component.getUtility(IIntIds)
+    doc_ids = get_invitation_intids(receivers=receivers,
+                                    sites=sites,
+                                    now=now,
+                                    accepted=True,
+                                    catalog=catalog,
+                                    mimeTypes=mimeTypes)
     for uid in doc_ids or ():
         obj = intids.queryObject(uid)
         if is_actionable(obj):
@@ -172,7 +178,10 @@ def get_pending_invitations(receivers=None,
 
 def has_pending_invitations(receivers=None, sites=None, now=None, catalog=None):
     intids = component.getUtility(IIntIds)
-    doc_ids = get_pending_invitation_ids(receivers, sites, now, catalog)
+    doc_ids = get_pending_invitation_ids(receivers=receivers,
+                                         sites=sites,
+                                         now=now,
+                                         catalog=catalog)
     for uid in doc_ids or ():
         obj = intids.queryObject(uid)
         if is_actionable(obj):
@@ -180,33 +189,8 @@ def has_pending_invitations(receivers=None, sites=None, now=None, catalog=None):
     return False
 
 
-def get_expired_invitation_ids(receivers=None,
-                               sites=None,
-                               now=None,
-                               catalog=None,
-                               mimeTypes=None):
-
-    receivers = safe_iterable(receivers)
-    mimeTypes = safe_iterable(mimeTypes)
-    sites = safe_iterable(sites)
-
-    # 60 min value w/ minute resolution
-    now = time.time() - 60 if not now else now
-    catalog = get_invitations_catalog() if catalog is None else catalog
-    query = {
-        IX_ACCEPTED: {'any_of': (False,)},
-        # 60 min value w/ minute resolution
-        IX_EXPIRYTIME: {'between': (60, now)},
-    }
-
-    for name, values in ((IX_RECEIVER, receivers),
-                         (IX_MIMETYPE, mimeTypes),
-                         (IX_SITE, sites)):
-        if values is not None:
-            query[name] = {'any_of': values}
-
-    expired_ids = catalog.apply(query) or LFSet()
-    return expired_ids
+def get_expired_invitation_ids(*args, **kwargs):
+    return get_invitation_intids(expired=True, *args, **kwargs)
 
 
 def get_expired_invitations(receivers=None,
@@ -216,11 +200,11 @@ def get_expired_invitations(receivers=None,
                             mimeTypes=None):
     result = []
     intids = component.getUtility(IIntIds)
-    doc_ids = get_expired_invitation_ids(receivers,
-                                         sites,
-                                         now,
-                                         catalog,
-                                         mimeTypes)
+    doc_ids = get_expired_invitation_ids(receivers=receivers,
+                                         sites=sites,
+                                         now=now,
+                                         catalog=catalog,
+                                         mimeTypes=mimeTypes)
     for uid in doc_ids or ():
         obj = intids.queryObject(uid)
         if is_actionable(obj):
@@ -235,11 +219,11 @@ def delete_expired_invitations(receivers=None,
                                mimeTypes=None):
     result = []
     container = component.getUtility(IInvitationsContainer)
-    invitations = get_expired_invitations(receivers,
-                                          sites,
-                                          now,
-                                          catalog,
-                                          mimeTypes)
+    invitations = get_expired_invitations(receivers=receivers,
+                                          sites=sites,
+                                          now=now,
+                                          catalog=catalog,
+                                          mimeTypes=mimeTypes)
     for invitation in invitations:
         if container.remove(invitation):
             result.append(invitation)
