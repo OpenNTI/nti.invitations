@@ -35,9 +35,9 @@ from nti.invitations.model import install_invitations_container
 from nti.invitations.utils import is_actionable
 from nti.invitations.utils import get_invitations
 from nti.invitations.utils import accept_invitation
-from nti.invitations.utils import get_invitations_ids
 from nti.invitations.utils import get_invitation_actor
 from nti.invitations.utils import get_sent_invitations
+from nti.invitations.utils import get_invitation_intids
 from nti.invitations.utils import get_pending_invitations
 from nti.invitations.utils import get_expired_invitations
 from nti.invitations.utils import has_pending_invitations
@@ -78,34 +78,59 @@ class TestUtils(InvitationLayerTest):
         catalog.index_doc(3, i3)
         return catalog, (i1, i2, i3)
 
-    def test_get_invitations_ids(self):
-        catalog, _ = self.create_invitations()
-        invitations = get_invitations_ids(catalog=catalog)
-        assert_that(invitations, has_length(3))
+    def test_get_invitation_intids(self):
+        catalog, created_invitations = self.create_invitations()
 
-        invitations = get_invitations_ids(catalog=catalog)
-        assert_that(invitations, has_length(3))
+        invitations = get_invitation_intids(catalog=catalog)
+        assert_that(invitations, has_length(2))
 
-        invitations = get_invitations_ids("dataserver2", receivers="aizen", catalog=catalog)
+        invitations = get_invitation_intids(sites="dataserver2", receivers="aizen", catalog=catalog)
         assert_that(invitations, has_length(0))
 
-        invitations = get_invitations_ids("dataserver2", receivers="ichigo", catalog=catalog)
-        assert_that(invitations, has_length(3))
+        invitations = get_invitation_intids(sites="dataserver2", receivers="ichigo", catalog=catalog)
+        assert_that(invitations, has_length(2))
 
-        invitations = get_invitations_ids(senders="ichigo", catalog=catalog)
+        invitations = get_invitation_intids(senders="ichigo", catalog=catalog)
         assert_that(invitations, has_length(0))
 
-        invitations = get_invitations_ids(senders="aizen", catalog=catalog)
-        assert_that(invitations, has_length(3))
+        invitations = get_invitation_intids(senders="aizen", catalog=catalog)
+        assert_that(invitations, has_length(2))
 
-        invitations = get_invitations_ids(sites="xzy", catalog=catalog)
+        invitations = get_invitation_intids(sites="xzy", catalog=catalog)
         assert_that(invitations, has_length(0))
 
-        invitations = get_invitations_ids(mimeTypes="xyz", catalog=catalog)
+        invitations = get_invitation_intids(mimeTypes="xyz", catalog=catalog)
         assert_that(invitations, has_length(0))
 
-        invitations = get_invitations_ids(sites="dataserver2", catalog=catalog)
+        invitations = get_invitation_intids(sites="dataserver2", catalog=catalog)
+        assert_that(invitations, has_length(2))
+        
+        invitations = get_invitation_intids(sites="dataserver2", 
+                                            accepted=True, 
+                                            catalog=catalog)
+        assert_that(invitations, has_length(0))
+        
+        created_invitations[0].accepted = True
+        catalog.index_doc(1, created_invitations[0])
+        invitations = get_invitation_intids(sites="dataserver2", 
+                                            accepted=True, 
+                                            catalog=catalog)
+        assert_that(invitations, has_length(1))
+        
+        created_invitations[1].accepted = True
+        catalog.index_doc(2, created_invitations[1])
+        invitations = get_invitation_intids(sites="dataserver2", 
+                                            accepted=True, 
+                                            catalog=catalog)
+        assert_that(invitations, has_length(2))
+        
+        created_invitations[2].accepted = True
+        catalog.index_doc(3, created_invitations[2])
+        invitations = get_invitation_intids(sites="dataserver2", 
+                                            accepted=True, 
+                                            catalog=catalog)
         assert_that(invitations, has_length(3))
+            
 
     def test_get_pending_invitations(self):
         catalog, _ = self.create_invitations()
