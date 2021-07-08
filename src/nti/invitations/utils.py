@@ -18,6 +18,8 @@ import six
 
 from zope import component
 
+from zope.component.hooks import getSite
+
 from zope.event import notify
 
 from zope.intid.interfaces import IIntIds
@@ -38,6 +40,8 @@ from nti.invitations.interfaces import IActionableInvitation
 from nti.invitations.interfaces import IInvitationsContainer
 from nti.invitations.interfaces import InvitationExpiredError
 from nti.invitations.interfaces import InvitationAcceptedEvent
+
+from nti.site.site import get_component_hierarchy_names
 
 MAX_TS = time.mktime(datetime.max.timetuple())
 
@@ -71,23 +75,66 @@ def is_actionable(obj):
     return IActionableInvitation.providedBy(obj)
 
 
-def get_invitations(sites=None,
-                    receivers=None,
-                    senders=None,
-                    catalog=None,
-                    mimeTypes=None):
+def get_all_invitations(sites=None,
+                        receivers=None,
+                        senders=None,
+                        catalog=None,
+                        mimeTypes=None):
+    """
+    Get all invitations via our current site.
+    """
     result = []
     intids = component.getUtility(IIntIds)
-    doc_ids = get_invitation_intids(sites=sites,
-                                    receivers=receivers,
-                                    senders=senders,
-                                    catalog=catalog,
-                                    mimeTypes=mimeTypes)
+    doc_ids = get_all_invitation_intids(sites=sites,
+                                        receivers=receivers,
+                                        senders=senders,
+                                        catalog=catalog,
+                                        mimeTypes=mimeTypes)
     for uid in doc_ids or ():
         obj = intids.queryObject(uid)
         if is_actionable(obj):
             result.append(obj)
     return result
+get_invitations = get_all_invitations
+
+
+def _build_invitation_query(receivers=None,
+                            senders=None,
+                            sites=None,
+                            mimeTypes=None):
+    receivers = safe_iterable(receivers)
+    senders = safe_iterable(senders)
+    mimeTypes = safe_iterable(mimeTypes)
+    sites = safe_iterable(sites)
+    query = dict()
+    if not sites and getSite() is not None:
+        sites = get_component_hierarchy_names()
+        sites = sites.split() if isinstance(sites, six.string_types) else sites
+    if not sites:
+        # tets
+        sites = ['dataserver2',]
+    query[IX_SITE] = {'any_of': sites}
+    
+    for name, values in ((IX_RECEIVER, receivers),
+                         (IX_SENDER, senders),
+                         (IX_MIMETYPE, mimeTypes)):
+        if values is not None:
+            query[name] = {'any_of': values}
+    return query
+
+
+def get_all_invitation_intids(receivers=None,
+                              senders=None,
+                              sites=None,
+                              catalog=None,
+                              mimeTypes=None):
+    """
+    Get all invitations without filtering by expiration
+    or acceptance.
+    """
+    query = _build_invitation_query(receivers, senders, sites, mimeTypes)
+    catalog = get_invitations_catalog() if catalog is None else catalog
+    return catalog.apply(query)
 
 
 def get_invitation_intids(receivers=None,
@@ -102,20 +149,10 @@ def get_invitation_intids(receivers=None,
     Get invitation intids by site and mimetype. By default, 
     pending invitations (not accepted and not expired) are returned.
     """
-    receivers = safe_iterable(receivers)
-    senders = safe_iterable(senders)
-    mimeTypes = safe_iterable(mimeTypes)
-    sites = safe_iterable(sites)
+    query = _build_invitation_query(receivers, senders, sites, mimeTypes)
     catalog = get_invitations_catalog() if catalog is None else catalog
+    query[IX_ACCEPTED] = {'any_of': (accepted,)}
     now = time.time() if not now else now
-    
-    query = {IX_ACCEPTED: {'any_of': (accepted,)}}
-    for name, values in ((IX_RECEIVER, receivers),
-                         (IX_SENDER, senders),
-                         (IX_MIMETYPE, mimeTypes),
-                         (IX_SITE, sites)):
-        if values is not None:
-            query[name] = {'any_of': values}
     
     if accepted:
         # Accepted
