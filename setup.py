@@ -60,6 +60,7 @@ setup(
         'nti.externalization',
         'nti.property',
         'nti.schema',
+        'nti.site',
         'nti.wref',
         'nti.zope_catalog',
         'six',
